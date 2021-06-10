@@ -32,7 +32,7 @@ func NewCollector(target *string, module *config.Module) Collector {
 		Module: module,
 		duration: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
-			Name:      "duration_seconds",
+			Name:      "scrape_duration_seconds",
 			Help:      "RADIUS response time in seconds.",
 		}),
 		responseCode: prometheus.NewGauge(prometheus.GaugeOpts{
