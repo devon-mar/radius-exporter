@@ -1,0 +1,15 @@
+modules:
+  m1:
+    username: user
+    password: password
+    secret: s3cr3t
+    nas_id: nas_id
+    nas_ip: 192.0.2.1
+  # Has a timeout configured
+  m2:
+    username: user
+    password: password
+    secret: s3cr3t
+    nas_id: nas_id
+    nas_ip: 192.0.2.1
+    timeout: 7

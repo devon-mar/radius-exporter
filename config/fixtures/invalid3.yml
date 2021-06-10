@@ -1,0 +1,7 @@
+modules:
+  # Bad NAS IP
+  invalid:
+    username: abc
+    password: def
+    secret: abc
+    nas_ip: not.an.ip

@@ -1,0 +1,5 @@
+modules:
+  # Missing secret
+  invalid:
+    username: abc
+    password: def
