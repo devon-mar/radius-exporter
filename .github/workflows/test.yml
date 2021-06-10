@@ -5,6 +5,7 @@ name: Test
 jobs:
   test:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v2
 
@@ -15,3 +16,9 @@ jobs:
 
       - name: Run go test
         run: go test ./...
+
+      - name: Run go build
+        run: go build
+
+      - name: Test with FreeRADIUS
+        run: test/test.sh

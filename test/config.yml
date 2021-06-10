@@ -1,0 +1,8 @@
+---
+modules:
+  test:
+    username: test_user
+    password: test_password
+    secret: testing123
+    nas_ip: 127.0.0.1
+    nas_id: radius-exporter
