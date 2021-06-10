@@ -63,9 +63,10 @@ func (c Collector) Collect(ch chan<- prometheus.Metric) {
 			"error":  err,
 			"target": *c.Target,
 		}).Error("Probe failure. Error sending radius request.")
-		return
+		c.success.Set(0)
 	} else {
 		log.WithFields(log.Fields{"target": *c.Target}).Debug("Probe success.")
+		c.success.Set(1)
 	}
 
 	c.duration.Collect(ch)
