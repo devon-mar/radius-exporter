@@ -12,35 +12,37 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
-var (
-	DefaultModule = rawModule{Timeout: 5}
-)
-
 type Config struct {
 	Modules map[string]Module `yaml:"modules"`
 }
 
 type Module struct {
-	Username string
-	Password string
-	Secret   []byte
-	Timeout  time.Duration
-	NasID    string
-	NasIP    net.IP
-}
-
-// A temporary Module to unmarshal into.
-type rawModule struct {
-	Username string `yaml:"username"`
-	Password string `yaml:"password"`
-	Secret   string `yaml:"secret"`
-	Timeout  int    `yaml:"timeout"`
-	NasID    string `yaml:"nas_id"`
-	NasIP    string `yaml:"nas_ip"`
+	Username        string
+	Password        string
+	Secret          []byte
+	Timeout         time.Duration
+	Retry           time.Duration
+	MaxPacketErrors int
+	NasID           string
+	NasIP           net.IP
 }
 
 func (m *Module) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	temp := DefaultModule
+	temp := struct {
+		Username        string `yaml:"username"`
+		Password        string `yaml:"password"`
+		Secret          string `yaml:"secret"`
+		Timeout         int    `yaml:"timeout"`
+		Retry           int    `yaml:"retry"`
+		MaxPacketErrors int    `yaml:"max_packet_errors"`
+		NasID           string `yaml:"nas_id"`
+		NasIP           string `yaml:"nas_ip"`
+	}{
+		Timeout: 5,
+		// Default to no retries
+		Retry:           0,
+		MaxPacketErrors: 10,
+	}
 
 	err := unmarshal(&temp)
 
@@ -49,24 +51,26 @@ func (m *Module) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	}
 
 	if temp.Username == "" {
-		return errors.New("Username must not be empty")
+		return errors.New("username must not be empty")
 	}
 	if temp.Password == "" {
-		return errors.New("Password must not be empty")
+		return errors.New("password must not be empty")
 	}
 	if temp.Secret == "" {
-		return errors.New("Secret must not be empty")
+		return errors.New("secret must not be empty")
 	}
 
 	m.Username = temp.Username
 	m.Password = temp.Password
 	m.Timeout = time.Second * time.Duration(temp.Timeout)
+	m.Retry = time.Second * time.Duration(temp.Retry)
+	m.MaxPacketErrors = temp.MaxPacketErrors
 	m.Secret = []byte(temp.Secret)
 	m.NasID = temp.NasID
 	if temp.NasIP != "" {
 		m.NasIP = net.ParseIP(temp.NasIP)
 		if m.NasIP == nil {
-			return fmt.Errorf("'%s' is not a valid IP.", temp.NasIP)
+			return fmt.Errorf("ip '%s' is not a valid IP", temp.NasIP)
 		}
 	}
 

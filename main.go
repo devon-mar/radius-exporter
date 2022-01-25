@@ -28,11 +28,6 @@ var (
 	exporterSha     = "abcd"
 )
 
-func getHandler() http.Handler {
-	r := prometheus.NewRegistry()
-	return promhttp.HandlerFor(r, promhttp.HandlerOpts{})
-}
-
 func metricsHandler(w http.ResponseWriter, r *http.Request) {
 	target := r.URL.Query().Get("target")
 	if target == "" {
@@ -44,13 +39,13 @@ func metricsHandler(w http.ResponseWriter, r *http.Request) {
 	moduleName := r.URL.Query().Get("module")
 	if moduleName == "" {
 		http.Error(w, "No module specified", http.StatusBadRequest)
-		log.Error("No module specified.")
+		log.Debug("No module specified.")
 		return
 	}
 	module, ok := exporterConfig.Modules[moduleName]
 	if !ok {
 		http.Error(w, fmt.Sprintf("Unknown module %q", moduleName), http.StatusBadRequest)
-		log.Error("Unknown module ", moduleName)
+		log.Debugf("Unknown module %q", moduleName)
 		return
 	}
 
@@ -79,12 +74,14 @@ func init() {
 }
 
 func main() {
+	flag.Parse()
+
 	if *showVer {
 		fmt.Printf("Version: %s\n", exporterVersion)
 		fmt.Printf("SHA: %s\n", exporterSha)
 		os.Exit(0)
 	}
-	log.Info("Starting radius exporter")
+	log.Info("Starting RADIUS exporter")
 
 	configureLog()
 

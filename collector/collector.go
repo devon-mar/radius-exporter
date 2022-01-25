@@ -75,6 +75,8 @@ func (c Collector) Collect(ch chan<- prometheus.Metric) {
 }
 
 func (c Collector) probe() error {
+	client := radius.Client{Retry: c.Module.Retry, MaxPacketErrors: c.Module.MaxPacketErrors}
+
 	packet := radius.New(radius.CodeAccessRequest, c.Module.Secret)
 	err := rfc2865.UserName_SetString(packet, c.Module.Username)
 	if err != nil {
@@ -102,7 +104,7 @@ func (c Collector) probe() error {
 	begin := time.Now()
 	ctx, cancel := context.WithTimeout(context.Background(), c.Module.Timeout)
 	defer cancel()
-	response, err := radius.Exchange(ctx, packet, *c.Target)
+	response, err := client.Exchange(ctx, packet, *c.Target)
 
 	if err != nil {
 		return err

@@ -1,9 +1,9 @@
 # radius-exporter
 
-A prometheus exporter similar to blackbox_exporter but for RADIUS servers.
+A Prometheus exporter similar to blackbox_exporter but for RADIUS servers.
 
 
-## Usage 
+## Usage
 ```
 Usage of ./radius-exporter:
   -config string
@@ -33,4 +33,10 @@ modules:
     # At least one of nas_id or nas_ip should be configured to comply with RFC2865 (4.1)
     nas_id: prometheus
     nas_ip: 192.0.2.1
+    # Interval in seconds on which to resend packets.
+    # Default: 0 (no retries)
+    retry: 0
+    # Maximum number of packet parsing and validation errors before
+    # returning an error.
+    max_packet_errors: 10
 ```
