@@ -17,3 +17,5 @@
 radius-exporter
 radius-exporter_*
 /config.yml
+
+dist/
