@@ -48,6 +48,7 @@ jobs:
           images: devonm/radius-exporter
           tags: |
             type=semver,pattern={{raw}}
+            type=semver,pattern=v{{major}}.{{minor}}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
