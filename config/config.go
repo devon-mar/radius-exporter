@@ -45,7 +45,6 @@ func (m *Module) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	}
 
 	err := unmarshal(&temp)
-
 	if err != nil {
 		return err
 	}

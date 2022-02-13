@@ -22,10 +22,8 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
 
-      - name: fmt check
-        run: test -z $(gofmt -l .)
-
-      - run: go vet .
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v2
 
       - name: Run go test
         run: go test -v ./...

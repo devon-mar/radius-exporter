@@ -2,9 +2,8 @@ package collector
 
 import (
 	"context"
-	"time"
-
 	"radius-exporter/config"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 
@@ -105,7 +104,6 @@ func (c Collector) probe() error {
 	ctx, cancel := context.WithTimeout(context.Background(), c.Module.Timeout)
 	defer cancel()
 	response, err := client.Exchange(ctx, packet, *c.Target)
-
 	if err != nil {
 		return err
 	}

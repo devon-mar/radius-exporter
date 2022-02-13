@@ -5,14 +5,13 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"radius-exporter/collector"
+	"radius-exporter/config"
 
 	log "github.com/sirupsen/logrus"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-
-	"radius-exporter/collector"
-	"radius-exporter/config"
 )
 
 var (
