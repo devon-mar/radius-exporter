@@ -4,10 +4,11 @@ import (
 	"context"
 	"fmt"
 	"net"
-	"radius-exporter/config"
 	"sync"
 	"testing"
 	"time"
+
+	"radius-exporter/config"
 
 	"layeh.com/radius"
 	"layeh.com/radius/rfc2865"

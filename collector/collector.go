@@ -2,8 +2,9 @@ package collector
 
 import (
 	"context"
-	"radius-exporter/config"
 	"time"
+
+	"radius-exporter/config"
 
 	"github.com/prometheus/client_golang/prometheus"
 
