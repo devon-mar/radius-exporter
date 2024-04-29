@@ -1,4 +1,4 @@
-module radius-exporter
+module github.com/devon-mar/radius-exporter
 
 go 1.15
 

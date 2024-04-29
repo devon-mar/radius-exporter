@@ -8,8 +8,8 @@ import (
 	"os"
 	"os/signal"
 
-	"radius-exporter/collector"
-	"radius-exporter/config"
+	"github.com/devon-mar/radius-exporter/collector"
+	"github.com/devon-mar/radius-exporter/config"
 
 	log "github.com/sirupsen/logrus"
 

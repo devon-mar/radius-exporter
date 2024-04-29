@@ -4,8 +4,6 @@ linters:
     - gofumpt
 
 linters-settings:
-  gofumpt:
-    module-path: radius-exporter
   errcheck:
     exclude-functions:
       - (layeh.com/radius.ResponseWriter).Write

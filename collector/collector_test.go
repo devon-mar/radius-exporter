@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"radius-exporter/config"
+	"github.com/devon-mar/radius-exporter/config"
 
 	"layeh.com/radius"
 	"layeh.com/radius/rfc2865"

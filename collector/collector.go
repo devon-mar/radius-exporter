@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"radius-exporter/config"
+	"github.com/devon-mar/radius-exporter/config"
 
 	"github.com/prometheus/client_golang/prometheus"
 
