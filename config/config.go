@@ -66,6 +66,7 @@ func LoadFromFile(path string) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
+  defer f.Close()
 
 	d := yaml.NewDecoder(f)
 	d.KnownFields(true)
