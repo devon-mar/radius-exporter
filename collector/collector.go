@@ -2,13 +2,12 @@ package collector
 
 import (
 	"context"
+	"log/slog"
 	"time"
 
 	"github.com/devon-mar/radius-exporter/config"
 
 	"github.com/prometheus/client_golang/prometheus"
-
-	log "github.com/sirupsen/logrus"
 
 	"layeh.com/radius"
 	"layeh.com/radius/rfc2865"
@@ -59,13 +58,10 @@ func (c Collector) Describe(ch chan<- *prometheus.Desc) {
 func (c Collector) Collect(ch chan<- prometheus.Metric) {
 	err := c.probe()
 	if err != nil {
-		log.WithFields(log.Fields{
-			"error":  err,
-			"target": *c.Target,
-		}).Error("Probe failure. Error sending radius request.")
+		slog.Error("Probe failure. Error sending radius request.", "err", err, "target", *c.Target)
 		c.success.Set(0)
 	} else {
-		log.WithFields(log.Fields{"target": *c.Target}).Debug("Probe success.")
+		slog.Debug("Probe success.", "target", *c.Target)
 		c.success.Set(1)
 	}
 

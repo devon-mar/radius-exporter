@@ -3,11 +3,10 @@ package config
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"log/slog"
 	"net"
+	"os"
 	"time"
-
-	log "github.com/sirupsen/logrus"
 
 	yaml "gopkg.in/yaml.v2"
 )
@@ -77,17 +76,17 @@ func (m *Module) UnmarshalYAML(unmarshal func(interface{}) error) error {
 }
 
 func LoadFromFile(path string) (*Config, error) {
-	b, err := ioutil.ReadFile(path)
+	b, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
 	c := &Config{}
 	err = yaml.UnmarshalStrict(b, c)
 	if err != nil {
-		log.WithFields(log.Fields{"error": err}).Error("Error unmarshalling yaml.")
+		slog.Error("Error unmarshalling yaml.", "err", err)
 		return nil, err
 	}
 
-	log.Info("Loaded config successfully.")
+	slog.Info("Loaded config successfully.")
 	return c, nil
 }

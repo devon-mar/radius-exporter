@@ -4,14 +4,14 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
 
 	"github.com/devon-mar/radius-exporter/collector"
 	"github.com/devon-mar/radius-exporter/config"
-
-	log "github.com/sirupsen/logrus"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -34,20 +34,20 @@ func metricsHandler(w http.ResponseWriter, r *http.Request) {
 	target := r.URL.Query().Get("target")
 	if target == "" {
 		http.Error(w, "No target specified", http.StatusBadRequest)
-		log.Error("No target specified.")
+		slog.Error("No target specified.")
 		return
 	}
 
 	moduleName := r.URL.Query().Get("module")
 	if moduleName == "" {
 		http.Error(w, "No module specified", http.StatusBadRequest)
-		log.Debug("No module specified.")
+		slog.Debug("No module specified.")
 		return
 	}
 	module, ok := exporterConfig.Modules[moduleName]
 	if !ok {
-		http.Error(w, fmt.Sprintf("Unknown module %q", moduleName), http.StatusBadRequest)
-		log.Debugf("Unknown module %q", moduleName)
+		http.Error(w, "Unknown module", http.StatusBadRequest)
+		slog.Debug("Unknown module", "module", moduleName)
 		return
 	}
 
@@ -58,17 +58,15 @@ func metricsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func configureLog() {
-	level, err := log.ParseLevel(*logLevel)
-	if err != nil {
-		panic(err)
-	}
-	log.SetLevel(level)
+	var slogLevel slog.Level
 
-	// Add timestamp
-	formatter := &log.TextFormatter{
-		FullTimestamp: true,
+	if err := slogLevel.UnmarshalText([]byte(*logLevel)); err != nil {
+		slog.Error("error parsing log level", "err", err)
+		os.Exit(1)
 	}
-	log.SetFormatter(formatter)
+
+	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slogLevel}))
+	slog.SetDefault(logger)
 }
 
 func main() {
@@ -79,7 +77,7 @@ func main() {
 		fmt.Printf("SHA: %s\n", exporterSha)
 		os.Exit(0)
 	}
-	log.Info("Starting RADIUS exporter")
+	slog.Info("Starting RADIUS exporter")
 
 	configureLog()
 
@@ -107,16 +105,16 @@ func main() {
 
 		signal.Notify(sigCh, os.Interrupt)
 		sig := <-sigCh
-		log.Warnf("received signal %s", sig)
+		slog.Warn("received signal", "signal", sig)
 
 		if err := server.Shutdown(context.Background()); err != nil {
-			log.Printf("HTTP server Shutdown: %v", err)
+			slog.Error("HTTP server shutdown error", "err", err)
 		}
 		close(idleConnsClosed)
 	}()
 
 	if err := server.ListenAndServe(); err != http.ErrServerClosed {
-		log.Fatalf("HTTP server ListenAndServe: %v", err)
+		slog.Error("HTTP server ListenAndServe", "err", err)
 	}
 
 	<-idleConnsClosed
