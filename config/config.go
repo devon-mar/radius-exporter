@@ -2,13 +2,11 @@ package config
 
 import (
 	"errors"
-	"fmt"
-	"log/slog"
-	"net"
+	"net/netip"
 	"os"
 	"time"
 
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 type Config struct {
@@ -16,32 +14,30 @@ type Config struct {
 }
 
 type Module struct {
-	Username        string
-	Password        string
-	Secret          []byte
-	Timeout         time.Duration
-	Retry           time.Duration
-	MaxPacketErrors int
-	NasID           string
-	NasIP           net.IP
+	Username        string        `yaml:"username"`
+	Password        string        `yaml:"password"`
+	Secret          []byte        `yaml:"-"`
+	Timeout         time.Duration `yaml:"-"`
+	Retry           time.Duration `yaml:"-"`
+	MaxPacketErrors int           `yaml:"max_packet_errors"`
+	NasID           string        `yaml:"nas_id"`
+	NasIP           netip.Addr    `yaml:"nas_ip"`
 }
 
 func (m *Module) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	type tempModule Module
 	temp := struct {
-		Username        string `yaml:"username"`
-		Password        string `yaml:"password"`
-		Secret          string `yaml:"secret"`
-		Timeout         int    `yaml:"timeout"`
-		Retry           int    `yaml:"retry"`
-		MaxPacketErrors int    `yaml:"max_packet_errors"`
-		NasID           string `yaml:"nas_id"`
-		NasIP           string `yaml:"nas_ip"`
+		Secret      string `yaml:"secret"`
+		Timeout     int    `yaml:"timeout"`
+		Retry       int    `yaml:"retry"`
+		*tempModule `yaml:",inline"`
 	}{
 		Timeout: 5,
 		// Default to no retries
-		Retry:           0,
-		MaxPacketErrors: 10,
+		Retry:      0,
+		tempModule: (*tempModule)(m),
 	}
+	m.MaxPacketErrors = 10
 
 	err := unmarshal(&temp)
 	if err != nil {
@@ -58,35 +54,26 @@ func (m *Module) UnmarshalYAML(unmarshal func(interface{}) error) error {
 		return errors.New("secret must not be empty")
 	}
 
-	m.Username = temp.Username
-	m.Password = temp.Password
 	m.Timeout = time.Second * time.Duration(temp.Timeout)
 	m.Retry = time.Second * time.Duration(temp.Retry)
-	m.MaxPacketErrors = temp.MaxPacketErrors
 	m.Secret = []byte(temp.Secret)
-	m.NasID = temp.NasID
-	if temp.NasIP != "" {
-		m.NasIP = net.ParseIP(temp.NasIP)
-		if m.NasIP == nil {
-			return fmt.Errorf("ip '%s' is not a valid IP", temp.NasIP)
-		}
-	}
 
 	return nil
 }
 
 func LoadFromFile(path string) (*Config, error) {
-	b, err := os.ReadFile(path)
+	f, err := os.Open(path)
 	if err != nil {
-		return nil, err
-	}
-	c := &Config{}
-	err = yaml.UnmarshalStrict(b, c)
-	if err != nil {
-		slog.Error("Error unmarshalling yaml.", "err", err)
 		return nil, err
 	}
 
-	slog.Info("Loaded config successfully.")
+	d := yaml.NewDecoder(f)
+	d.KnownFields(true)
+
+	c := &Config{}
+	if err = d.Decode(c); err != nil {
+		return nil, err
+	}
+
 	return c, nil
 }

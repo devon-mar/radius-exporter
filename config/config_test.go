@@ -2,13 +2,13 @@ package config
 
 import (
 	"fmt"
-	"net"
+	"net/netip"
 	"testing"
 	"time"
 )
 
 func TestValidConfig(t *testing.T) {
-	config, err := LoadFromFile("fixtures/valid.yml")
+	config, err := LoadFromFile("testdata/valid.yml")
 	if err != nil {
 		t.Errorf("Expected no error from LoadFromFile() got %s", err)
 	}
@@ -28,7 +28,7 @@ func TestValidConfig(t *testing.T) {
 	if m1.NasID != "nas_id" {
 		t.Errorf("Password: have %s, want %s", m1.NasID, "nas_id")
 	}
-	if expected := net.ParseIP("192.0.2.1"); !m1.NasIP.Equal(expected) {
+	if expected := netip.MustParseAddr("192.0.2.1"); m1.NasIP != expected {
 		t.Errorf("Password: have %s, want %s", m1.NasIP, expected)
 	}
 	if want := time.Duration(5) * time.Second; m1.Timeout != want {
@@ -50,10 +50,13 @@ func TestValidConfig(t *testing.T) {
 
 func TestInvalid(t *testing.T) {
 	for i := 0; i < 4; i++ {
-		file := fmt.Sprintf("fixtures/invalid%d.yml", i)
-		_, err := LoadFromFile(file)
-		if err == nil {
-			t.Errorf("Expected error from config %s", file)
-		}
+		file := fmt.Sprintf("testdata/invalid%d.yml", i)
+
+		t.Run(file, func(t *testing.T) {
+			_, err := LoadFromFile(file)
+			if err == nil {
+				t.Errorf("Expected error from config %s", file)
+			}
+		})
 	}
 }

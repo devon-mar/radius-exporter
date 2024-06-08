@@ -3,6 +3,7 @@ package collector
 import (
 	"context"
 	"log/slog"
+	"net"
 	"time"
 
 	"github.com/devon-mar/radius-exporter/config"
@@ -90,8 +91,8 @@ func (c Collector) probe() error {
 			return err
 		}
 	}
-	if c.Module.NasIP != nil {
-		err = rfc2865.NASIPAddress_Add(packet, c.Module.NasIP)
+	if c.Module.NasIP.IsValid() {
+		err = rfc2865.NASIPAddress_Add(packet, net.IP(c.Module.NasIP.AsSlice()))
 		if err != nil {
 			return err
 		}
