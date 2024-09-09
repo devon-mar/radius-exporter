@@ -1,9 +1,12 @@
 ---
+version: 2
 project_name: radius-exporter
 builds:
   - env:
       - CGO_ENABLED=0
     ldflags: -X main.exporterVersion=v{{.Version}} -X main.exporterSha={{.Commit}}
+    flags:
+      - -trimpath
     goos:
       - linux
       - windows
