@@ -4,6 +4,9 @@
     tags:
       - "v*"
 
+permissions:
+  contents: write
+
 name: release
 jobs:
   goreleaser:
