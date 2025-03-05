@@ -3,7 +3,7 @@ module github.com/devon-mar/radius-exporter
 go 1.22
 
 require (
-	github.com/prometheus/client_golang v1.21.0
+	github.com/prometheus/client_golang v1.21.1
 	gopkg.in/yaml.v3 v3.0.1
 	layeh.com/radius v0.0.0-20231213012653-1006025d24f8
 )
