@@ -13,3 +13,9 @@ modules:
     nas_id: nas_id
     nas_ip: 192.0.2.1
     timeout: 7
+  m3:
+    username: user
+    password: ${TEST_PASSWORD}
+    secret: ${TEST_SECRET}
+    nas_id: nas_id
+    nas_ip: 192.0.2.1
