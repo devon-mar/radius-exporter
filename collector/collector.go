@@ -2,6 +2,8 @@ package collector
 
 import (
 	"context"
+	"crypto/hmac"
+	"crypto/md5"
 	"log/slog"
 	"net"
 	"time"
@@ -12,6 +14,7 @@ import (
 
 	"layeh.com/radius"
 	"layeh.com/radius/rfc2865"
+	"layeh.com/radius/rfc2869"
 )
 
 const (
@@ -72,10 +75,18 @@ func (c Collector) Collect(ch chan<- prometheus.Metric) {
 }
 
 func (c Collector) probe() error {
+	zeroAuthenticator := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+
+	hash := hmac.New(md5.New, c.Module.Secret)
 	client := radius.Client{Retry: c.Module.Retry, MaxPacketErrors: c.Module.MaxPacketErrors}
 
 	packet := radius.New(radius.CodeAccessRequest, c.Module.Secret)
-	err := rfc2865.UserName_SetString(packet, c.Module.Username)
+	err := rfc2869.MessageAuthenticator_Set(packet, zeroAuthenticator[0:16])
+	if err != nil {
+		return err
+	}
+
+	err = rfc2865.UserName_SetString(packet, c.Module.Username)
 	if err != nil {
 		return err
 	}
@@ -101,6 +112,13 @@ func (c Collector) probe() error {
 	begin := time.Now()
 	ctx, cancel := context.WithTimeout(context.Background(), c.Module.Timeout)
 	defer cancel()
+	encode, _ := packet.Encode()
+	hash.Write(encode)
+	err = rfc2869.MessageAuthenticator_Set(packet, hash.Sum(nil))
+	if err != nil {
+		return err
+	}
+
 	response, err := client.Exchange(ctx, packet, *c.Target)
 	if err != nil {
 		return err
