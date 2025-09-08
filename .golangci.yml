@@ -1,15 +1,18 @@
 ---
+version: "2"
 linters:
   enable:
-    - gofumpt
     - misspell
     - sloglint
-
-linters-settings:
-  errcheck:
-    exclude-functions:
-      - (layeh.com/radius.ResponseWriter).Write
-      - (*layeh.com/radius.PacketServer).Serve
-      - (*layeh.com/radius.PacketServer).Shutdown
-      - (net.PacketConn).Close
-      - (net/http.ResponseWriter).Write
+  settings:
+    errcheck:
+      exclude-functions:
+        - (layeh.com/radius.ResponseWriter).Write
+        - (*layeh.com/radius.PacketServer).Serve
+        - (*layeh.com/radius.PacketServer).Shutdown
+        - (net.PacketConn).Close
+        - (net/http.ResponseWriter).Write
+        - (*os.File).Close
+formatters:
+  enable:
+    - gofumpt
