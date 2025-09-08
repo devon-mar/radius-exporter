@@ -10,27 +10,32 @@ sleep 5
 echo "::endgroup::"
 
 echo "Starting radius-exporter"
+export TEST_SECRET=testing123
+
 ../radius-exporter &
 PID=$!
-RESP=$(curl --fail --silent --show-error "http://localhost:9881/metrics?target=127.0.0.1:1812&module=test")
 
-echo "::group::Exporter Output"
-echo "$RESP"
-echo "::endgroup::"
+for MOD in test testenv; do
+    RESP=$(curl --fail --silent --show-error "http://localhost:9881/metrics?target=127.0.0.1:1812&module="${MOD})
 
-echo "$RESP" | grep -q "^radius_success 1"
-RET=$?
-if [ $RET -ne 0 ]; then
-    echo "::error::radius_success code wasn't 1."
-    RC=$RET
-fi
+    echo "::group::Exporter Output for ${MOD}"
+    echo "$RESP"
+    echo "::endgroup::"
 
-echo "$RESP" | grep -q "^radius_response_code 2"
-RET=$?
-if [ $RET -ne 0 ]; then
-    echo "::error::Response code wasn't 2."
-    RC=$RET
-fi
+    echo "$RESP" | grep -q "^radius_success 1"
+    RET=$?
+    if [ $RET -ne 0 ]; then
+        echo "::error::radius_success code wasn't 1."
+        RC=$RET
+    fi
+
+    echo "$RESP" | grep -q "^radius_response_code 2"
+    RET=$?
+    if [ $RET -ne 0 ]; then
+        echo "::error::Response code wasn't 2."
+        RC=$RET
+    fi
+done
 
 echo "Killing radius-exporter"
 kill $PID

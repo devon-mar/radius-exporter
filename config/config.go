@@ -15,7 +15,7 @@ type Config struct {
 
 type Module struct {
 	Username        string        `yaml:"username"`
-	Password        string        `yaml:"password"`
+	Password        string        `yaml:"-"`
 	Secret          []byte        `yaml:"-"`
 	Timeout         time.Duration `yaml:"-"`
 	Retry           time.Duration `yaml:"-"`
@@ -27,9 +27,11 @@ type Module struct {
 func (m *Module) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	type tempModule Module
 	temp := struct {
-		Secret      string `yaml:"secret"`
-		Timeout     int    `yaml:"timeout"`
-		Retry       int    `yaml:"retry"`
+		Password string `yaml:"password"`
+		Secret   string `yaml:"secret"`
+		Timeout  int    `yaml:"timeout"`
+		Retry    int    `yaml:"retry"`
+
 		*tempModule `yaml:",inline"`
 	}{
 		Timeout: 5,
@@ -44,6 +46,9 @@ func (m *Module) UnmarshalYAML(unmarshal func(interface{}) error) error {
 		return err
 	}
 
+	temp.Password = os.ExpandEnv(temp.Password)
+	temp.Secret = os.ExpandEnv(temp.Secret)
+
 	if temp.Username == "" {
 		return errors.New("username must not be empty")
 	}
@@ -57,6 +62,7 @@ func (m *Module) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	m.Timeout = time.Second * time.Duration(temp.Timeout)
 	m.Retry = time.Second * time.Duration(temp.Retry)
 	m.Secret = []byte(temp.Secret)
+	m.Password = temp.Password
 
 	return nil
 }

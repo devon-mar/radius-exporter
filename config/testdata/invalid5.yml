@@ -1,0 +1,6 @@
+modules:
+  # Configured but unset Secret ENV Variable
+  invalid:
+    username: abc
+    password: ${SET_PASSWORD}
+    secret: ${UNSET_SECRET}
