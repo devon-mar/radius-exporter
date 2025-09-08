@@ -32,7 +32,7 @@ type TestServer struct {
 	ps                  *radius.PacketServer
 }
 
-func NewTestServer(username string, password string, secret string) *TestServer {
+func NewTestServer(t *testing.T, username string, password string, secret string) *TestServer {
 	ts := &TestServer{}
 
 	var err error
@@ -63,6 +63,7 @@ func NewTestServer(username string, password string, secret string) *TestServer 
 
 		ts.mtx.Lock()
 		if err = ts.ValidateMessageAuthenticator(r.Packet, secret); err != nil {
+			t.Logf("message authenticator validation failed: %v", err)
 			ts.InvalidMsgAuthCount++
 		} else {
 			ts.ValidMsgAuthCount++
@@ -91,13 +92,13 @@ func (ts *TestServer) ValidateMessageAuthenticator(packet *radius.Packet, shared
 	copy(originalMessageAuth, messageAuth)
 	err := rfc2869.MessageAuthenticator_Set(packet, make([]byte, 16)) // Set to 16 zero bytes
 	if err != nil {
-		return errors.New("failed to set zero MessageAuthenticator: " + err.Error())
+		return fmt.Errorf("failed to set zero MessageAuthenticator: %w", err)
 	}
 
 	// Get the raw packet bytes for HMAC calculation
 	rawPacket, err := packet.Encode()
 	if err != nil {
-		return errors.New("failed to encode packet: " + err.Error())
+		return fmt.Errorf("failed to encode packet: %w", err)
 	}
 
 	// Calculate HMAC-MD5 of the entire packet using the shared secret
@@ -108,7 +109,7 @@ func (ts *TestServer) ValidateMessageAuthenticator(packet *radius.Packet, shared
 	// Restore original Message-Authenticator
 	err = rfc2869.MessageAuthenticator_Set(packet, originalMessageAuth)
 	if err != nil {
-		return errors.New("failed to set MessageAuthenticator: " + err.Error())
+		return fmt.Errorf("failed to set MessageAuthenticator: %w", err)
 	}
 
 	// Compare computed HMAC with received Message-Authenticator
@@ -138,7 +139,7 @@ func TestProbeAccessAccept(t *testing.T) {
 	user := "testUser"
 	password := "testPassowrd"
 
-	ts := NewTestServer(user, password, secret)
+	ts := NewTestServer(t, user, password, secret)
 	ts.Start()
 	defer ts.Close()
 
