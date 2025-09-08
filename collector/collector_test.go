@@ -7,7 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
-	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -22,11 +22,10 @@ const secret = "5ecr3t"
 
 type TestServer struct {
 	Address             string
-	AcceptCount         int
-	RejectCount         int
-	ValidMsgAuthCount   int
-	InvalidMsgAuthCount int
-	mtx                 sync.Mutex
+	AcceptCount         atomic.Uint64
+	RejectCount         atomic.Uint64
+	ValidMsgAuthCount   atomic.Uint64
+	InvalidMsgAuthCount atomic.Uint64
 	started             bool
 	pc                  net.PacketConn
 	ps                  *radius.PacketServer
@@ -50,25 +49,19 @@ func NewTestServer(t *testing.T, username string, password string, secret string
 
 		var code radius.Code
 		if reqUsername == username && reqPassword == password {
-			ts.mtx.Lock()
-			ts.AcceptCount++
-			ts.mtx.Unlock()
+			ts.AcceptCount.Add(1)
 			code = radius.CodeAccessAccept
 		} else {
-			ts.mtx.Lock()
-			ts.RejectCount++
-			ts.mtx.Unlock()
+			ts.RejectCount.Add(1)
 			code = radius.CodeAccessReject
 		}
 
-		ts.mtx.Lock()
 		if err = ts.ValidateMessageAuthenticator(r.Packet, secret); err != nil {
 			t.Logf("message authenticator validation failed: %v", err)
-			ts.InvalidMsgAuthCount++
+			ts.InvalidMsgAuthCount.Add(1)
 		} else {
-			ts.ValidMsgAuthCount++
+			ts.ValidMsgAuthCount.Add(1)
 		}
-		ts.mtx.Unlock()
 
 		w.Write(r.Response(code))
 	}
@@ -161,18 +154,18 @@ func TestProbeAccessAccept(t *testing.T) {
 
 	ts.Close()
 
-	if ts.AcceptCount != 1 {
-		t.Errorf("expected 1 Access-Accept, got %d", ts.AcceptCount)
+	if ac := ts.AcceptCount.Load(); ac != 1 {
+		t.Errorf("expected 1 Access-Accept, got %d", ac)
 	}
-	if ts.RejectCount != 0 {
-		t.Errorf("expected 0 Access-Reject got %d", ts.RejectCount)
-	}
-
-	if ts.InvalidMsgAuthCount != 0 {
-		t.Errorf("expected 0 Invalid MessageAuthenticators got %d", ts.InvalidMsgAuthCount)
+	if rc := ts.RejectCount.Load(); rc != 0 {
+		t.Errorf("expected 0 Access-Reject got %d", rc)
 	}
 
-	if ts.ValidMsgAuthCount != 1 {
-		t.Errorf("expected 1 Valid MessageAuthenticators got %d", ts.InvalidMsgAuthCount)
+	if c := ts.InvalidMsgAuthCount.Load(); c != 0 {
+		t.Errorf("expected 0 Invalid MessageAuthenticators got %d", c)
+	}
+
+	if c := ts.ValidMsgAuthCount.Load(); c != 1 {
+		t.Errorf("expected 1 Valid MessageAuthenticators got %d", c)
 	}
 }
