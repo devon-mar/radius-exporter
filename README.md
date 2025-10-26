@@ -24,12 +24,16 @@ Usage of ./radius-exporter:
 ---
 modules:
   module_name:
-    # Required
+    # username or username_file is required.
     username: radius-test
-    # Required
+    username_file: /path/to/username
+    # password or password_file is required.
     password: radius-test
-    # RADIUS shared secret. Required.
+    password_file: /path/to/password
+    # RADIUS shared secret.
+    # secret or secret_file is required.
     secret: radius-test
+    secret_file: /path/to/secret
     # At least one of nas_id or nas_ip should be configured to comply with RFC2865 (4.1)
     nas_id: prometheus
     nas_ip: 192.0.2.1
