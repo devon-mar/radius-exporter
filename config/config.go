@@ -1,7 +1,7 @@
 package config
 
 import (
-	"errors"
+	"fmt"
 	"net/netip"
 	"os"
 	"time"
@@ -47,16 +47,6 @@ func (m *Module) UnmarshalYAML(unmarshal func(interface{}) error) error {
 		return err
 	}
 
-	if temp.Username == "" && temp.UsernameFile == "" {
-		return errors.New("username or username_file must be specified")
-	}
-	if temp.Password == "" && temp.PasswordFile == "" {
-		return errors.New("password or password_file must be specified")
-	}
-	if temp.Secret == "" && temp.SecretFile == "" {
-		return errors.New("secret or secret_file must be specified")
-	}
-
 	m.Timeout = time.Second * time.Duration(temp.Timeout)
 	m.Retry = time.Second * time.Duration(temp.Retry)
 	m.Secret = []byte(temp.Secret)
@@ -77,6 +67,28 @@ func LoadFromFile(path string) (*Config, error) {
 	c := &Config{}
 	if err = d.Decode(c); err != nil {
 		return nil, err
+	}
+
+	for name, module := range c.Modules {
+		const envPrefix = "RADIUS_EXPORTER_MODULE_"
+		if module.Username == "" && module.UsernameFile == "" {
+			envUsername := os.Getenv(envPrefix + name + "_USERNAME")
+			if envUsername == "" {
+				return nil, fmt.Errorf("%s: username not found in config, env or file", name)
+			}
+		}
+		if module.Password == "" && module.PasswordFile == "" {
+			envPassword := os.Getenv(envPrefix + name + "_PASSWORD")
+			if envPassword == "" {
+				return nil, fmt.Errorf("%s: password not found in config, env or file", name)
+			}
+		}
+		if len(module.Secret) == 0 && module.SecretFile == "" {
+			envSecret := os.Getenv(envPrefix + name + "_SECRET")
+			if envSecret == "" {
+				return nil, fmt.Errorf("%s: secret not found in config, env or file", name)
+			}
+		}
 	}
 
 	return c, nil
