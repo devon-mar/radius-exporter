@@ -48,6 +48,31 @@ func TestValidConfig(t *testing.T) {
 	}
 }
 
+func TestConfigEnvSecrets(t *testing.T) {
+	const username = "testuser"
+	const password = "password"
+	const secret = "secret123"
+	t.Setenv("RADIUS_EXPORTER_MODULE_m1_USERNAME", username)
+	t.Setenv("RADIUS_EXPORTER_MODULE_m1_PASSWORD", password)
+	t.Setenv("RADIUS_EXPORTER_MODULE_m1_SECRET", secret)
+	config, err := LoadFromFile("testdata/env.yml")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	m1 := config.Modules["m1"]
+
+	if m1.Username != username {
+		t.Errorf("expected username %q, got %q", username, m1.Username)
+	}
+	if m1.Password != password {
+		t.Errorf("expected password %q, got %q", password, m1.Password)
+	}
+	if string(m1.Secret) != secret {
+		t.Errorf("expected password %q, got %q", secret, m1.Secret)
+	}
+}
+
 func TestInvalid(t *testing.T) {
 	for i := 0; i < 4; i++ {
 		file := fmt.Sprintf("testdata/invalid%d.yml", i)

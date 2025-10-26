@@ -72,14 +72,14 @@ func LoadFromFile(path string) (*Config, error) {
 	for name, module := range c.Modules {
 		const envPrefix = "RADIUS_EXPORTER_MODULE_"
 		if module.Username == "" && module.UsernameFile == "" {
-			envUsername := os.Getenv(envPrefix + name + "_USERNAME")
-			if envUsername == "" {
+			module.Username = os.Getenv(envPrefix + name + "_USERNAME")
+			if module.Username == "" {
 				return nil, fmt.Errorf("%s: username not found in config, env or file", name)
 			}
 		}
 		if module.Password == "" && module.PasswordFile == "" {
-			envPassword := os.Getenv(envPrefix + name + "_PASSWORD")
-			if envPassword == "" {
+			module.Password = os.Getenv(envPrefix + name + "_PASSWORD")
+			if module.Password == "" {
 				return nil, fmt.Errorf("%s: password not found in config, env or file", name)
 			}
 		}
@@ -88,7 +88,9 @@ func LoadFromFile(path string) (*Config, error) {
 			if envSecret == "" {
 				return nil, fmt.Errorf("%s: secret not found in config, env or file", name)
 			}
+			module.Secret = []byte(envSecret)
 		}
+		c.Modules[name] = module
 	}
 
 	return c, nil

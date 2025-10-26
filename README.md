@@ -25,13 +25,21 @@ Usage of ./radius-exporter:
 modules:
   module_name:
     # username or username_file is required.
+    # Can also be specified through the environment variable
+    # RADIUS_EXPORTER_<module name>_USERNAME
     username: radius-test
     username_file: /path/to/username
     # password or password_file is required.
+    #
+    # Can also be specified through the environment variable
+    # RADIUS_EXPORTER_<module name>_PASSWORD
     password: radius-test
     password_file: /path/to/password
     # RADIUS shared secret.
     # secret or secret_file is required.
+    #
+    # Can also be specified through the environment variable
+    # RADIUS_EXPORTER_<module name>_SECRET
     secret: radius-test
     secret_file: /path/to/secret
     # At least one of nas_id or nas_ip should be configured to comply with RFC2865 (4.1)
