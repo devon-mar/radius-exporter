@@ -15,8 +15,11 @@ type Config struct {
 
 type Module struct {
 	Username        string        `yaml:"username"`
+	UsernameFile    string        `yaml:"username_file"`
 	Password        string        `yaml:"password"`
+	PasswordFile    string        `yaml:"password_file"`
 	Secret          []byte        `yaml:"-"`
+	SecretFile      string        `yaml:"secret_file"`
 	Timeout         time.Duration `yaml:"-"`
 	Retry           time.Duration `yaml:"-"`
 	MaxPacketErrors int           `yaml:"max_packet_errors"`
@@ -44,14 +47,14 @@ func (m *Module) UnmarshalYAML(unmarshal func(interface{}) error) error {
 		return err
 	}
 
-	if temp.Username == "" {
-		return errors.New("username must not be empty")
+	if temp.Username == "" && temp.UsernameFile == "" {
+		return errors.New("username or username_file must be specified")
 	}
-	if temp.Password == "" {
-		return errors.New("password must not be empty")
+	if temp.Password == "" && temp.PasswordFile == "" {
+		return errors.New("password or password_file must be specified")
 	}
-	if temp.Secret == "" {
-		return errors.New("secret must not be empty")
+	if temp.Secret == "" && temp.SecretFile == "" {
+		return errors.New("secret or secret_file must be specified")
 	}
 
 	m.Timeout = time.Second * time.Duration(temp.Timeout)

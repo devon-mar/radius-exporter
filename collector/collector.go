@@ -4,8 +4,10 @@ import (
 	"context"
 	"crypto/hmac"
 	"crypto/md5"
+	"fmt"
 	"log/slog"
 	"net"
+	"os"
 	"time"
 
 	"github.com/devon-mar/radius-exporter/config"
@@ -75,23 +77,50 @@ func (c Collector) Collect(ch chan<- prometheus.Metric) {
 }
 
 func (c Collector) probe() error {
+	username := c.Module.Username
+	if c.Module.UsernameFile != "" {
+		b, err := os.ReadFile(c.Module.UsernameFile)
+		if err != nil {
+			return fmt.Errorf("could not read username file: %w", err)
+		}
+		username = string(b)
+	}
+
+	password := c.Module.Password
+	if c.Module.PasswordFile != "" {
+		b, err := os.ReadFile(c.Module.PasswordFile)
+		if err != nil {
+			return fmt.Errorf("could not read password file: %w", err)
+		}
+		password = string(b)
+	}
+
+	secret := c.Module.Secret
+	if c.Module.SecretFile != "" {
+		b, err := os.ReadFile(c.Module.SecretFile)
+		if err != nil {
+			return fmt.Errorf("could not read secret file: %w", err)
+		}
+		secret = b
+	}
+
 	zeroAuthenticator := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 
-	hash := hmac.New(md5.New, c.Module.Secret)
+	hash := hmac.New(md5.New, secret)
 	client := radius.Client{Retry: c.Module.Retry, MaxPacketErrors: c.Module.MaxPacketErrors}
 
-	packet := radius.New(radius.CodeAccessRequest, c.Module.Secret)
+	packet := radius.New(radius.CodeAccessRequest, secret)
 	err := rfc2869.MessageAuthenticator_Set(packet, zeroAuthenticator[0:16])
 	if err != nil {
 		return err
 	}
 
-	err = rfc2865.UserName_SetString(packet, c.Module.Username)
+	err = rfc2865.UserName_SetString(packet, username)
 	if err != nil {
 		return err
 	}
 
-	err = rfc2865.UserPassword_SetString(packet, c.Module.Password)
+	err = rfc2865.UserPassword_SetString(packet, password)
 	if err != nil {
 		return err
 	}

@@ -7,6 +7,8 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"os"
+	"path"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -140,6 +142,62 @@ func TestProbeAccessAccept(t *testing.T) {
 		Username:        user,
 		Password:        password,
 		Secret:          []byte(secret),
+		Timeout:         time.Second * 2,
+		Retry:           0,
+		MaxPacketErrors: 0,
+		NasID:           "test",
+	}
+
+	c := NewCollector(&ts.Address, &m)
+	err := c.probe()
+	if err != nil {
+		t.Errorf("error probing RADIUS server: %v", err)
+	}
+
+	ts.Close()
+
+	if ac := ts.AcceptCount.Load(); ac != 1 {
+		t.Errorf("expected 1 Access-Accept, got %d", ac)
+	}
+	if rc := ts.RejectCount.Load(); rc != 0 {
+		t.Errorf("expected 0 Access-Reject got %d", rc)
+	}
+
+	if c := ts.InvalidMsgAuthCount.Load(); c != 0 {
+		t.Errorf("expected 0 Invalid MessageAuthenticators got %d", c)
+	}
+
+	if c := ts.ValidMsgAuthCount.Load(); c != 1 {
+		t.Errorf("expected 1 Valid MessageAuthenticators got %d", c)
+	}
+}
+
+func TestProbeAccessAcceptFileCredentials(t *testing.T) {
+	const user = "testUser"
+	const password = "testPassowrd"
+
+	td := t.TempDir()
+	usernameFile := path.Join(td, "username")
+	passwordFile := path.Join(td, "password")
+	secretFile := path.Join(td, "secret")
+	if err := os.WriteFile(usernameFile, []byte(user), 0o600); err != nil {
+		t.Fatalf("could not write username file: %v", err)
+	}
+	if err := os.WriteFile(passwordFile, []byte(password), 0o600); err != nil {
+		t.Fatalf("could not write password file: %v", err)
+	}
+	if err := os.WriteFile(secretFile, []byte(secret), 0o600); err != nil {
+		t.Fatalf("could not write secret file: %v", err)
+	}
+
+	ts := NewTestServer(t, user, password, secret)
+	ts.Start()
+	defer ts.Close()
+
+	m := config.Module{
+		UsernameFile:    usernameFile,
+		PasswordFile:    passwordFile,
+		SecretFile:      secretFile,
 		Timeout:         time.Second * 2,
 		Retry:           0,
 		MaxPacketErrors: 0,
