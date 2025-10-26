@@ -1,8 +1,9 @@
 package config
 
 import (
-	"fmt"
 	"net/netip"
+	"path"
+	"reflect"
 	"testing"
 )
 
@@ -11,39 +12,31 @@ func TestValidConfig(t *testing.T) {
 	if err != nil {
 		t.Errorf("Expected no error from LoadFromFile() got %s", err)
 	}
-	m1, ok := config.Modules["m1"]
-	if !ok {
-		t.Errorf("Config does not contain module 'm1'")
-	}
-	if m1.Username != "user" {
-		t.Errorf("Username: have %s, want %s", m1.Username, "user")
-	}
-	if m1.Password != "password" {
-		t.Errorf("Password: have %s, want %s", m1.Password, "password")
-	}
-	if have := (string)(m1.Secret); have != "s3cr3t" {
-		t.Errorf("Password: have %s, want %s", have, "s3cr3t")
-	}
-	if m1.NasID != "nas_id" {
-		t.Errorf("Password: have %s, want %s", m1.NasID, "nas_id")
-	}
-	if expected := netip.MustParseAddr("192.0.2.1"); m1.NasIP != expected {
-		t.Errorf("Password: have %s, want %s", m1.NasIP, expected)
-	}
-	if want := uint(5); m1.TimeoutSeconds != want {
-		t.Errorf("Timeout: have %d, want %d", m1.TimeoutSeconds, want)
-	}
 
-	m2, ok := config.Modules["m2"]
-	if !ok {
-		t.Errorf("Config does not contain module 'm2'")
+	expected := Config{
+		Modules: map[string]Module{
+			"m1": {
+				Username:        "user",
+				Password:        "password",
+				Secret:          "s3cr3t",
+				TimeoutSeconds:  5,
+				MaxPacketErrors: 10,
+				NasID:           "nas_id",
+				NasIP:           netip.MustParseAddr("192.0.2.1"),
+			},
+			"m2": {
+				Username:        "user",
+				Password:        "password",
+				Secret:          "s3cr3t",
+				TimeoutSeconds:  7,
+				MaxPacketErrors: 10,
+				NasID:           "nas_id",
+				NasIP:           netip.MustParseAddr("192.0.2.1"),
+			},
+		},
 	}
-	if want := uint(7); m2.TimeoutSeconds != want {
-		t.Errorf("Timeout: have %d, want %d", m2.TimeoutSeconds, want)
-	}
-
-	if c := len(config.Modules); c != 2 {
-		t.Errorf("Module count: have %d, want %d", c, 2)
+	if !reflect.DeepEqual(&expected, config) {
+		t.Errorf("expected config %#v, got %#v", expected, config)
 	}
 }
 
@@ -73,10 +66,17 @@ func TestConfigEnvSecrets(t *testing.T) {
 }
 
 func TestInvalid(t *testing.T) {
-	for i := 0; i < 4; i++ {
-		file := fmt.Sprintf("testdata/invalid%d.yml", i)
+	tests := []string{
+		"invalid0.yml",
+		"invalid1.yml",
+		"invalid2.yml",
+		"invalid3.yml",
+	}
 
-		t.Run(file, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test, func(t *testing.T) {
+			file := path.Join("testdata", test)
+
 			_, err := LoadFromFile(file)
 			if err == nil {
 				t.Errorf("Expected error from config %s", file)
