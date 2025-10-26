@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/netip"
 	"testing"
-	"time"
 )
 
 func TestValidConfig(t *testing.T) {
@@ -31,16 +30,16 @@ func TestValidConfig(t *testing.T) {
 	if expected := netip.MustParseAddr("192.0.2.1"); m1.NasIP != expected {
 		t.Errorf("Password: have %s, want %s", m1.NasIP, expected)
 	}
-	if want := time.Duration(5) * time.Second; m1.Timeout != want {
-		t.Errorf("Timeout: have %s, want %s", m1.Timeout, want)
+	if want := uint(5); m1.TimeoutSeconds != want {
+		t.Errorf("Timeout: have %d, want %d", m1.TimeoutSeconds, want)
 	}
 
 	m2, ok := config.Modules["m2"]
 	if !ok {
 		t.Errorf("Config does not contain module 'm2'")
 	}
-	if want := time.Duration(7) * time.Second; m2.Timeout != want {
-		t.Errorf("Timeout: have %s, want %s", m2.Timeout, want)
+	if want := uint(7); m2.TimeoutSeconds != want {
+		t.Errorf("Timeout: have %d, want %d", m2.TimeoutSeconds, want)
 	}
 
 	if c := len(config.Modules); c != 2 {

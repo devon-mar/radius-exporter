@@ -95,7 +95,7 @@ func (c Collector) probe() error {
 		password = string(b)
 	}
 
-	secret := c.Module.Secret
+	secret := []byte(c.Module.Secret)
 	if c.Module.SecretFile != "" {
 		b, err := os.ReadFile(c.Module.SecretFile)
 		if err != nil {
@@ -107,7 +107,10 @@ func (c Collector) probe() error {
 	zeroAuthenticator := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 
 	hash := hmac.New(md5.New, secret)
-	client := radius.Client{Retry: c.Module.Retry, MaxPacketErrors: c.Module.MaxPacketErrors}
+	client := radius.Client{
+		Retry:           time.Second * time.Duration(c.Module.RetrySeconds),
+		MaxPacketErrors: c.Module.MaxPacketErrors,
+	}
 
 	packet := radius.New(radius.CodeAccessRequest, secret)
 	err := rfc2869.MessageAuthenticator_Set(packet, zeroAuthenticator[0:16])
@@ -139,7 +142,7 @@ func (c Collector) probe() error {
 	}
 
 	begin := time.Now()
-	ctx, cancel := context.WithTimeout(context.Background(), c.Module.Timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*time.Duration(c.Module.TimeoutSeconds))
 	defer cancel()
 	encode, _ := packet.Encode()
 	hash.Write(encode)

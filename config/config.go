@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/netip"
 	"os"
-	"time"
 
 	"gopkg.in/yaml.v3"
 )
@@ -14,44 +13,17 @@ type Config struct {
 }
 
 type Module struct {
-	Username        string        `yaml:"username"`
-	UsernameFile    string        `yaml:"username_file"`
-	Password        string        `yaml:"password"`
-	PasswordFile    string        `yaml:"password_file"`
-	Secret          []byte        `yaml:"-"`
-	SecretFile      string        `yaml:"secret_file"`
-	Timeout         time.Duration `yaml:"-"`
-	Retry           time.Duration `yaml:"-"`
-	MaxPacketErrors int           `yaml:"max_packet_errors"`
-	NasID           string        `yaml:"nas_id"`
-	NasIP           netip.Addr    `yaml:"nas_ip"`
-}
-
-func (m *Module) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	type tempModule Module
-	temp := struct {
-		Secret      string `yaml:"secret"`
-		Timeout     int    `yaml:"timeout"`
-		Retry       int    `yaml:"retry"`
-		*tempModule `yaml:",inline"`
-	}{
-		Timeout: 5,
-		// Default to no retries
-		Retry:      0,
-		tempModule: (*tempModule)(m),
-	}
-	m.MaxPacketErrors = 10
-
-	err := unmarshal(&temp)
-	if err != nil {
-		return err
-	}
-
-	m.Timeout = time.Second * time.Duration(temp.Timeout)
-	m.Retry = time.Second * time.Duration(temp.Retry)
-	m.Secret = []byte(temp.Secret)
-
-	return nil
+	Username        string     `yaml:"username"`
+	UsernameFile    string     `yaml:"username_file"`
+	Password        string     `yaml:"password"`
+	PasswordFile    string     `yaml:"password_file"`
+	Secret          string     `yaml:"secret"`
+	SecretFile      string     `yaml:"secret_file"`
+	TimeoutSeconds  uint       `yaml:"timeout"`
+	RetrySeconds    uint       `yaml:"retry"`
+	MaxPacketErrors int        `yaml:"max_packet_errors"`
+	NasID           string     `yaml:"nas_id"`
+	NasIP           netip.Addr `yaml:"nas_ip"`
 }
 
 func LoadFromFile(path string) (*Config, error) {
@@ -71,6 +43,15 @@ func LoadFromFile(path string) (*Config, error) {
 
 	for name, module := range c.Modules {
 		const envPrefix = "RADIUS_EXPORTER_MODULE_"
+
+		// Set defaults
+		if module.TimeoutSeconds == 0 {
+			module.TimeoutSeconds = 5
+		}
+		if module.MaxPacketErrors == 0 {
+			module.MaxPacketErrors = 10
+		}
+
 		if module.Username == "" && module.UsernameFile == "" {
 			module.Username = os.Getenv(envPrefix + name + "_USERNAME")
 			if module.Username == "" {
@@ -84,11 +65,10 @@ func LoadFromFile(path string) (*Config, error) {
 			}
 		}
 		if len(module.Secret) == 0 && module.SecretFile == "" {
-			envSecret := os.Getenv(envPrefix + name + "_SECRET")
-			if envSecret == "" {
+			module.Secret = os.Getenv(envPrefix + name + "_SECRET")
+			if module.Secret == "" {
 				return nil, fmt.Errorf("%s: secret not found in config, env or file", name)
 			}
-			module.Secret = []byte(envSecret)
 		}
 		c.Modules[name] = module
 	}

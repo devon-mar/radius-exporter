@@ -141,9 +141,9 @@ func TestProbeAccessAccept(t *testing.T) {
 	m := config.Module{
 		Username:        user,
 		Password:        password,
-		Secret:          []byte(secret),
-		Timeout:         time.Second * 2,
-		Retry:           0,
+		Secret:          secret,
+		TimeoutSeconds:  2,
+		RetrySeconds:    0,
 		MaxPacketErrors: 0,
 		NasID:           "test",
 	}
@@ -198,8 +198,8 @@ func TestProbeAccessAcceptFileCredentials(t *testing.T) {
 		UsernameFile:    usernameFile,
 		PasswordFile:    passwordFile,
 		SecretFile:      secretFile,
-		Timeout:         time.Second * 2,
-		Retry:           0,
+		TimeoutSeconds:  2,
+		RetrySeconds:    0,
 		MaxPacketErrors: 0,
 		NasID:           "test",
 	}
