@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -34,20 +33,20 @@ func metricsHandler(w http.ResponseWriter, r *http.Request) {
 	target := r.URL.Query().Get("target")
 	if target == "" {
 		http.Error(w, "No target specified", http.StatusBadRequest)
-		slog.Error("No target specified.")
+		log.Println("No target specified.")
 		return
 	}
 
 	moduleName := r.URL.Query().Get("module")
 	if moduleName == "" {
 		http.Error(w, "No module specified", http.StatusBadRequest)
-		slog.Debug("No module specified.")
+		log.Println("No module specified.")
 		return
 	}
 	module, ok := exporterConfig.Modules[moduleName]
 	if !ok {
 		http.Error(w, "Unknown module", http.StatusBadRequest)
-		slog.Debug("Unknown module", "module", moduleName)
+		log.Printf("Unknown module: %s", moduleName)
 		return
 	}
 
@@ -58,15 +57,7 @@ func metricsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func configureLog() {
-	var slogLevel slog.Level
-
-	if err := slogLevel.UnmarshalText([]byte(*logLevel)); err != nil {
-		slog.Error("error parsing log level", "err", err)
-		os.Exit(1)
-	}
-
-	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slogLevel}))
-	slog.SetDefault(logger)
+	// Установка уровня логирования не поддерживается в стандартном log
 }
 
 func main() {
@@ -77,7 +68,7 @@ func main() {
 		fmt.Printf("SHA: %s\n", exporterSha)
 		os.Exit(0)
 	}
-	slog.Info("Starting RADIUS exporter")
+	log.Println("Starting RADIUS exporter")
 
 	configureLog()
 
@@ -105,16 +96,16 @@ func main() {
 
 		signal.Notify(sigCh, os.Interrupt)
 		sig := <-sigCh
-		slog.Warn("received signal", "signal", sig)
+		log.Printf("received signal: %v", sig)
 
 		if err := server.Shutdown(context.Background()); err != nil {
-			slog.Error("HTTP server shutdown error", "err", err)
+			log.Printf("HTTP server shutdown error: %v", err)
 		}
 		close(idleConnsClosed)
 	}()
 
 	if err := server.ListenAndServe(); err != http.ErrServerClosed {
-		slog.Error("HTTP server ListenAndServe", "err", err)
+		log.Printf("HTTP server ListenAndServe: %v", err)
 	}
 
 	<-idleConnsClosed

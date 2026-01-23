@@ -1,21 +1,41 @@
-# Binaries for programs and plugins
+```
+# Go binaries
 *.exe
-*.exe~
 *.dll
 *.so
-*.dylib
-
-# Test binary, built with `go test -c`
-*.test
-
-# Output of the go coverage tool, specifically when used with LiteIDE
+*.a
+*.o
+*.obj
 *.out
 
-# Dependency directories (remove the comment below to include it)
-# vendor/
+# Go build artifacts
+bin/
+_dist/
+_build/
 
-radius-exporter
-radius-exporter_*
-/config.yml
+# Dependencies
+vendor/
 
-dist/
+# Logs
+*.log
+
+# Environment
+.env
+.env.local
+.env.*
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Coverage
+coverage/
+htmlcov/
+.coverage
+
+# System
+.DS_Store
+Thumbs.db
+```

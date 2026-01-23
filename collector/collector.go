@@ -5,7 +5,7 @@ import (
 	"crypto/hmac"
 	"crypto/md5"
 	"fmt"
-	"log/slog"
+	"log"
 	"net"
 	"os"
 	"time"
@@ -29,6 +29,7 @@ type Collector struct {
 	duration     prometheus.Gauge
 	responseCode prometheus.Gauge
 	success      prometheus.Gauge
+	errors       prometheus.Counter
 }
 
 func NewCollector(target *string, module *config.Module) Collector {
@@ -50,6 +51,11 @@ func NewCollector(target *string, module *config.Module) Collector {
 			Name:      "success",
 			Help:      "1 if the radius probe was successful.",
 		}),
+		errors: prometheus.NewCounter(prometheus.CounterOpts{
+			Namespace: namespace,
+			Name:      "probe_errors_total",
+			Help:      "Total number of probe errors.",
+		}),
 	}
 }
 
@@ -58,22 +64,25 @@ func (c Collector) Describe(ch chan<- *prometheus.Desc) {
 	c.duration.Describe(ch)
 	c.responseCode.Describe(ch)
 	c.success.Describe(ch)
+	c.errors.Describe(ch)
 }
 
 // Collect implements prometheus.Collector
 func (c Collector) Collect(ch chan<- prometheus.Metric) {
 	err := c.probe()
 	if err != nil {
-		slog.Error("Probe failure. Error sending radius request.", "err", err, "target", *c.Target)
+		log.Printf("Probe failure. Error sending radius request. Error: %v, Target: %s", err, *c.Target)
 		c.success.Set(0)
+		c.errors.Inc()
 	} else {
-		slog.Debug("Probe success.", "target", *c.Target)
+		log.Printf("Probe success. Target: %s", *c.Target)
 		c.success.Set(1)
 	}
 
 	c.duration.Collect(ch)
 	c.responseCode.Collect(ch)
 	c.success.Collect(ch)
+	c.errors.Collect(ch)
 }
 
 func (c Collector) probe() error {
